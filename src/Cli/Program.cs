@@ -1,29 +1,53 @@
 ﻿using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Unicode;
 
-// Встановлюю UTF-8 для правильного відображення українських літер.
+// Встановлюю кодування для українських символів.
 Console.OutputEncoding = Encoding.UTF8;
 
-// Виводжу назву роботи та свої дані.
-Console.WriteLine("CrossApp — практикум з крос-платформного програмування");
-Console.WriteLine("Студент: Яремкович Володимир, група ФЕІ-33");
-Console.WriteLine(new string('-', 60));
+// Збираю інформацію один раз, щоб обидва формати містили однакові дані.
+var info = new Dictionary<string, string>
+{
+    ["Назва"] = "CrossApp — практикум з крос-платформного програмування",
+    ["Студент"] = "Яремкович Володимир",
+    ["Група"] = "ФЕІ-33",
+    ["ОС (OSDescription)"] = RuntimeInformation.OSDescription,
+    ["ОС (Environment)"] = Environment.OSVersion.ToString(),
+    ["Архітектура процесу"] = RuntimeInformation.ProcessArchitecture.ToString(),
+    ["Версія .NET (CLR)"] = Environment.Version.ToString(),
+    ["Runtime"] = RuntimeInformation.FrameworkDescription,
+    ["Каталог застосунку"] = AppContext.BaseDirectory,
+    ["Поточний каталог"] = Environment.CurrentDirectory,
+    ["Предметна область"] = "Замовлення",
+    ["Сутності"] = "клієнт, товар, замовлення, рядок замовлення"
+};
 
-// Показую операційну систему двома способами.
-Console.WriteLine($"ОС (OSDescription): {RuntimeInformation.OSDescription}");
-Console.WriteLine($"ОС (Environment): {Environment.OSVersion}");
+// Перевіряю, чи передав я прапорець --json під час запуску.
+if (args.Contains("--json"))
+{
+    var options = new JsonSerializerOptions
+    {
+        // Виводжу JSON одним рядком без відступів.
+        WriteIndented = false,
 
-// Показую архітектуру процесу та середовище виконання.
-Console.WriteLine($"Архітектура процесу: {RuntimeInformation.ProcessArchitecture}");
-Console.WriteLine($"Версія .NET (CLR): {Environment.Version}");
-Console.WriteLine($"Runtime: {RuntimeInformation.FrameworkDescription}");
+        // Залишаю українські літери читабельними.
+        Encoder = JavaScriptEncoder.Create(
+            UnicodeRanges.BasicLatin,
+            UnicodeRanges.Cyrillic)
+    };
 
-// Порівнюю розташування програми з поточним робочим каталогом.
-Console.WriteLine($"Каталог застосунку: {AppContext.BaseDirectory}");
-Console.WriteLine($"Поточний каталог: {Environment.CurrentDirectory}");
+    Console.WriteLine(JsonSerializer.Serialize(info, options));
+}
+else
+{
+    // Без прапорця показую ті самі дані у двох стовпцях.
+    Console.WriteLine($"{"Параметр",-24} | Значення");
+    Console.WriteLine(new string('-', 90));
 
-Console.WriteLine(new string('-', 60));
-
-// Зазначаю предметну область для наступних лабораторних.
-Console.WriteLine("Предметна область: Замовлення");
-Console.WriteLine("Сутності: клієнт, товар, замовлення, рядок замовлення");
+    foreach (var item in info)
+    {
+        Console.WriteLine($"{item.Key,-24} | {item.Value}");
+    }
+}
